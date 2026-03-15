@@ -39,7 +39,17 @@ initial begin
     buffer_has_data = 0;
 end
 
-// ========== FIXED STATE MACHINE ==========
+// ========== BRAM WRITE (synchronous only, no async reset) ==========
+// Xilinx Block RAMs do not support asynchronous resets.
+// Separating the BRAM write into its own always block avoids Synth 8-3391.
+// The initial block above handles power-on initialization for FPGA.
+always @(posedge clk) begin
+    if (valid_in) begin
+        bram[write_ptr] <= data_in;
+    end
+end
+
+// ========== CONTROL LOGIC (with async reset) ==========
 always @(posedge clk or negedge reset_n) begin
     if (!reset_n) begin
         write_ptr <= 0;
@@ -53,9 +63,6 @@ always @(posedge clk or negedge reset_n) begin
         
         // ===== WRITE SIDE =====
         if (valid_in) begin
-            // Store data
-            bram[write_ptr] <= data_in;
-            
             // Increment write pointer (wrap at 4095)
             if (write_ptr == 4095) begin
                 write_ptr <= 0;
@@ -70,7 +77,6 @@ always @(posedge clk or negedge reset_n) begin
                 // When we've written LATENCY samples, buffer is "primed"
                 if (delay_counter == LATENCY - 1) begin
                     buffer_has_data <= 1'b1;
-                //    $display("[LAT_BUF] Buffer now has %d samples (primed)", LATENCY);
                 end
             end
         end
@@ -91,9 +97,6 @@ always @(posedge clk or negedge reset_n) begin
             
             // Output is valid
             valid_out_reg <= 1'b1;
-            
-            //$display("[LAT_BUF] Reading: write_ptr=%d, read_ptr=%d, data=%h",
-              //       write_ptr, read_ptr, bram[read_ptr]);
         end
     end
 end

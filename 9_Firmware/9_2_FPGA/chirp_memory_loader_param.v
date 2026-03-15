@@ -1,15 +1,15 @@
 `timescale 1ns / 1ps
 module chirp_memory_loader_param #(
-    parameter LONG_I_FILE_SEG0 = "C:/Users/dell/Desktop/ASUS/RADAR_V5/Firmware/FPGA/PLFM_RADAR_Xilinx_ISE_V2/Python/mem_files/fpga_mem_files/long_chirp_seg0_i.mem",
-    parameter LONG_Q_FILE_SEG0 = "C:/Users/dell/Desktop/ASUS/RADAR_V5/Firmware/FPGA/PLFM_RADAR_Xilinx_ISE_V2/Python/mem_files/fpga_mem_files/long_chirp_seg0_q.mem",
-    parameter LONG_I_FILE_SEG1 = "C:/Users/dell/Desktop/ASUS/RADAR_V5/Firmware/FPGA/PLFM_RADAR_Xilinx_ISE_V2/Python/mem_files/fpga_mem_files/long_chirp_seg1_i.mem",
-    parameter LONG_Q_FILE_SEG1 = "C:/Users/dell/Desktop/ASUS/RADAR_V5/Firmware/FPGA/PLFM_RADAR_Xilinx_ISE_V2/Python/mem_files/fpga_mem_files/long_chirp_seg1_q.mem",
-    parameter LONG_I_FILE_SEG2 = "C:/Users/dell/Desktop/ASUS/RADAR_V5/Firmware/FPGA/PLFM_RADAR_Xilinx_ISE_V2/Python/mem_files/fpga_mem_files/long_chirp_seg2_i.mem",
-    parameter LONG_Q_FILE_SEG2 = "C:/Users/dell/Desktop/ASUS/RADAR_V5/Firmware/FPGA/PLFM_RADAR_Xilinx_ISE_V2/Python/mem_files/fpga_mem_files/long_chirp_seg2_q.mem",
-    parameter LONG_I_FILE_SEG3 = "C:/Users/dell/Desktop/ASUS/RADAR_V5/Firmware/FPGA/PLFM_RADAR_Xilinx_ISE_V2/Python/mem_files/fpga_mem_files/long_chirp_seg3_i.mem",
-    parameter LONG_Q_FILE_SEG3 = "C:/Users/dell/Desktop/ASUS/RADAR_V5/Firmware/FPGA/PLFM_RADAR_Xilinx_ISE_V2/Python/mem_files/fpga_mem_files/long_chirp_seg3_q.mem",
-    parameter SHORT_I_FILE = "C:/Users/dell/Desktop/ASUS/RADAR_V5/Firmware/FPGA/PLFM_RADAR_Xilinx_ISE_V2/Python/mem_files/fpga_mem_files/short_chirp_i.mem",
-    parameter SHORT_Q_FILE = "C:/Users/dell/Desktop/ASUS/RADAR_V5/Firmware/FPGA/PLFM_RADAR_Xilinx_ISE_V2/Python/mem_files/fpga_mem_files/short_chirp_q.mem",
+    parameter LONG_I_FILE_SEG0 = "long_chirp_seg0_i.mem",
+    parameter LONG_Q_FILE_SEG0 = "long_chirp_seg0_q.mem",
+    parameter LONG_I_FILE_SEG1 = "long_chirp_seg1_i.mem",
+    parameter LONG_Q_FILE_SEG1 = "long_chirp_seg1_q.mem",
+    parameter LONG_I_FILE_SEG2 = "long_chirp_seg2_i.mem",
+    parameter LONG_Q_FILE_SEG2 = "long_chirp_seg2_q.mem",
+    parameter LONG_I_FILE_SEG3 = "long_chirp_seg3_i.mem",
+    parameter LONG_Q_FILE_SEG3 = "long_chirp_seg3_q.mem",
+    parameter SHORT_I_FILE = "short_chirp_i.mem",
+    parameter SHORT_Q_FILE = "short_chirp_q.mem",
     parameter DEBUG = 1
 )(
     input wire clk,

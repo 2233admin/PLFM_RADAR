@@ -14,10 +14,10 @@ module radar_receiver_final (
     // Chirp counter from transmitter (for frame sync and matched filter)
     input wire [5:0] chirp_counter,
     
-    output reg [31:0] doppler_output,
-    output reg doppler_valid,
-    output reg [4:0] doppler_bin,
-    output reg [5:0] range_bin
+    output wire [31:0] doppler_output,
+    output wire doppler_valid,
+    output wire [4:0] doppler_bin,
+    output wire [5:0] range_bin
 );
 
 // ========== INTERNAL SIGNALS ==========
@@ -53,7 +53,6 @@ wire new_chirp_frame;
 wire [31:0] doppler_spectrum;
 wire doppler_spectrum_valid;
 wire [4:0] doppler_bin_out;
-wire [5:0] doppler_range_bin_out;
 wire doppler_processing;
 wire doppler_frame_done;
 
@@ -92,46 +91,41 @@ radar_mode_controller rmc (
     .scanning(rmc_scanning),
     .scan_complete(rmc_scan_complete)
 );
-reg clk_400m;
+wire clk_400m;
 
-lvds_to_cmos_400m clk_400m_inst(
-    // ADC Physical Interface (LVDS Inputs)
-    .clk_400m_p(adc_dco_p),            // Data Clock Output P (400MHz LVDS, 2.5V)
-    .clk_400m_n(adc_dco_n),            // Data Clock Output N (400MHz LVDS, 2.5V)
-    .reset_n(reset_n),              // Active-low reset
-    
-    // CMOS Output Interface (400MHz Domain)
-    .clk_400m_cmos(clk_400m)         // ADC data clock (CMOS, 3.3V)
-);
+// NOTE: lvds_to_cmos_400m removed — ad9484_interface_400m now provides
+// the buffered 400MHz DCO clock via adc_dco_bufg, avoiding duplicate
+// IBUFDS instantiations on the same LVDS clock pair.
 
 // 1. ADC + CDC + AGC
 
 // CMOS Output Interface (400MHz Domain)
-wire [7:0] adc_data_cmos;  // 8-bit ADC data (CMOS)
-wire adc_dco_cmos;         // ADC data clock (CMOS, 400MHz)
+wire [7:0] adc_data_cmos;  // 8-bit ADC data (CMOS, from ad9484_interface_400m)
 wire adc_valid;            // Data valid signal
 
 wire [7:0] cdc_data_cmos;  // 8-bit ADC data (CMOS)
 wire cdc_valid;            // Data valid signal
 
+// ADC power-down control (directly tie low = ADC always on)
+assign adc_pwdn = 1'b0;
 
-ad9484_lvds_to_cmos_400m adc (
+ad9484_interface_400m adc (
 	.adc_d_p(adc_d_p),
 	.adc_d_n(adc_d_n),
 	.adc_dco_p(adc_dco_p),
 	.adc_dco_n(adc_dco_n),
+	.sys_clk(clk),
 	.reset_n(reset_n),
-	.adc_data_cmos(adc_data_cmos),
-	.adc_dco_cmos(adc_dco_cmos),
-	.adc_valid(adc_valid),
-	.adc_pwdn(adc_pwdn)
+	.adc_data_400m(adc_data_cmos),
+	.adc_data_valid_400m(adc_valid),
+	.adc_dco_bufg(clk_400m)
 );
 
 cdc_adc_to_processing #(
     .WIDTH(8),
     .STAGES(3)
 )cdc(
-    .src_clk(adc_dco_cmos),
+    .src_clk(clk_400m),
     .dst_clk(clk_400m),
     .reset_n(reset_n),
     .src_data(adc_data_cmos),
@@ -199,7 +193,7 @@ always @(posedge clk or negedge reset_n) begin
         if (sample_addr_reg == 1023) sample_addr_reg <= 0;
     end
 end
-assign sample_addr_wire = sample_addr_reg;
+// sample_addr_wire removed — was unused implicit wire (synthesis warning)
 
 // 4. CRITICAL: Reference Chirp Latency Buffer
 // This aligns reference data with FFT output (2159 cycle delay)
@@ -249,8 +243,6 @@ matched_filter_multi_segment mf_dual (
     .segment_request(segment_request),
     .mem_request(mem_request),
 	 .sample_addr_out(sample_addr_from_chain),
-    .ref_i(16'd0),          // Direct ref to multi_seg
-    .ref_q(16'd0),
     .mem_ready(mem_ready),
     .pc_i_w(range_profile_i),
     .pc_q_w(range_profile_q),
@@ -338,7 +330,7 @@ doppler_processor_optimized #(
     .doppler_output(doppler_output),
     .doppler_valid(doppler_valid),
     .doppler_bin(doppler_bin),
-    .range_bin(doppler_range_bin_out),
+    .range_bin(range_bin),
     
     // Status
     .processing_active(doppler_processing),
@@ -347,9 +339,8 @@ doppler_processor_optimized #(
 );
 
 // ========== OUTPUT CONNECTIONS ==========
-assign doppler_range_bin = doppler_range_bin_out;
-assign doppler_processing_active = doppler_processing;
-assign doppler_frame_complete = doppler_frame_done;
+// doppler_output, doppler_valid, doppler_bin, range_bin are directly
+// connected to doppler_proc ports above
 
 // ========== STATUS ==========
 

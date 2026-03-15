@@ -62,6 +62,7 @@ module matched_filter_processing_chain (
     output wire [3:0] chain_state
 );
 
+`ifdef SIMULATION
 // ============================================================================
 // PARAMETERS
 // ============================================================================
@@ -525,5 +526,22 @@ initial begin
         work_im[init_idx]    = 32'd0;
     end
 end
+
+`else
+// ============================================================================
+// SYNTHESIS STUB
+// ============================================================================
+// The behavioral FFT implementation above uses $cos/$sin/$rtoi (non-
+// synthesizable).  For real hardware, replace this stub with Xilinx xfft
+// IP cores or a synthesizable pipelined FFT.  The stub ties outputs to
+// safe defaults so the rest of the design can be synthesized and verified.
+// ============================================================================
+
+assign range_profile_i     = 16'd0;
+assign range_profile_q     = 16'd0;
+assign range_profile_valid = 1'b0;
+assign chain_state         = 4'd0;  // permanently IDLE
+
+`endif
 
 endmodule

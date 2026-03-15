@@ -11,7 +11,8 @@ module ad9484_interface_400m (
     
     // Output at 400MHz domain
     output wire [7:0] adc_data_400m, // ADC data at 400MHz
-    output wire adc_data_valid_400m  // Valid at 400MHz
+    output wire adc_data_valid_400m, // Valid at 400MHz
+    output wire adc_dco_bufg         // Buffered 400MHz DCO clock for downstream use
 );
 
 // LVDS to single-ended conversion
@@ -43,6 +44,14 @@ IBUFDS #(
     .IB(adc_dco_n)
 );
 
+// Global clock buffer for DCO — used as 400MHz clock throughout receiver
+wire adc_dco_buffered;
+BUFG bufg_dco (
+    .I(adc_dco),
+    .O(adc_dco_buffered)
+);
+assign adc_dco_bufg = adc_dco_buffered;
+
 // IDDR for capturing DDR data
 wire [7:0] adc_data_rise;  // Data on rising edge
 wire [7:0] adc_data_fall;  // Data on falling edge
@@ -58,7 +67,7 @@ generate
         ) iddr_inst (
             .Q1(adc_data_rise[j]),   // Rising edge data
             .Q2(adc_data_fall[j]),   // Falling edge data
-            .C(adc_dco),             // 400MHz DCO
+            .C(adc_dco_buffered),    // 400MHz DCO (buffered)
             .CE(1'b1),
             .D(adc_data[j]),
             .R(1'b0),
@@ -72,7 +81,7 @@ reg [7:0] adc_data_400m_reg;
 reg adc_data_valid_400m_reg;
 reg dco_phase;
 
-always @(posedge adc_dco or negedge reset_n) begin
+always @(posedge adc_dco_buffered or negedge reset_n) begin
     if (!reset_n) begin
         adc_data_400m_reg <= 8'b0;
         adc_data_valid_400m_reg <= 1'b0;
