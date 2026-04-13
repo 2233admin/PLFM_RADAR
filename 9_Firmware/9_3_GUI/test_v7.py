@@ -264,6 +264,15 @@ class TestUSBPacketParser(unittest.TestCase):
 # Test: v7.workers — polar_to_geographic
 # =============================================================================
 
+def _pyqt6_available():
+    try:
+        import PyQt6.QtCore  # noqa: F401
+        return True
+    except ImportError:
+        return False
+
+
+@unittest.skipUnless(_pyqt6_available(), "PyQt6 not installed")
 class TestPolarToGeographic(unittest.TestCase):
     def test_north_bearing(self):
         from v7.workers import polar_to_geographic
@@ -326,12 +335,16 @@ class TestV7Init(unittest.TestCase):
 
     def test_key_exports(self):
         import v7
+        # Core exports (no PyQt6 required)
         for name in ["RadarTarget", "RadarSettings", "GPSData",
                       "ProcessingConfig", "FT2232HConnection",
-                      "RadarProtocol", "RadarProcessor",
-                      "RadarDataWorker", "RadarMapWidget",
-                      "RadarDashboard"]:
+                      "RadarProtocol", "RadarProcessor"]:
             self.assertTrue(hasattr(v7, name), f"v7 missing export: {name}")
+        # PyQt6-dependent exports — only present when PyQt6 is installed
+        if _pyqt6_available():
+            for name in ["RadarDataWorker", "RadarMapWidget",
+                          "RadarDashboard"]:
+                self.assertTrue(hasattr(v7, name), f"v7 missing export: {name}")
 
 
 # =============================================================================

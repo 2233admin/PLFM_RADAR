@@ -42,25 +42,27 @@ from .processing import (
     apply_pitch_correction,
 )
 
-# Workers and simulator
-from .workers import (
-    RadarDataWorker,
-    GPSDataWorker,
-    TargetSimulator,
-    polar_to_geographic,
-)
+# Workers, map widget, and dashboard require PyQt6 — import lazily so that
+# tests/CI environments without PyQt6 can still access models/hardware/processing.
+try:
+    from .workers import (
+        RadarDataWorker,
+        GPSDataWorker,
+        TargetSimulator,
+        polar_to_geographic,
+    )
 
-# Map widget
-from .map_widget import (
-    MapBridge,
-    RadarMapWidget,
-)
+    from .map_widget import (
+        MapBridge,
+        RadarMapWidget,
+    )
 
-# Main dashboard
-from .dashboard import (
-    RadarDashboard,
-    RangeDopplerCanvas,
-)
+    from .dashboard import (
+        RadarDashboard,
+        RangeDopplerCanvas,
+    )
+except ImportError:  # PyQt6 not installed (e.g. CI headless runner)
+    pass
 
 __all__ = [  # noqa: RUF022
     # models
