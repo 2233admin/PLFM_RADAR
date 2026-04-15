@@ -11,8 +11,10 @@ module radar_receiver_final (
     input wire adc_dco_n,            // Data Clock Output N (400MHz LVDS)
 	 output wire adc_pwdn,
     
-    // Chirp counter from transmitter (for frame sync and matched filter)
+    // Chirp counter from transmitter (for matched filter indexing)
     input wire [5:0] chirp_counter,
+    // Frame-start pulse from transmitter (CDC-synchronized, 1 clk_100m cycle)
+    input wire tx_frame_start,
     
     output wire [31:0] doppler_output,
     output wire doppler_valid,
@@ -392,30 +394,31 @@ mti_canceller #(
     .mti_first_chirp(mti_first_chirp)
 );
 
-// ========== FRAME SYNC USING chirp_counter ==========
-reg [5:0] chirp_counter_prev;
+// ========== FRAME SYNC FROM TRANSMITTER ==========
+// [FPGA-001 FIXED] Use the authoritative new_chirp_frame signal from the
+// transmitter (via plfm_chirp_controller_enhanced), CDC-synchronized to
+// clk_100m in radar_system_top.  Previous code tried to derive frame
+// boundaries from chirp_counter == 0, but that counter comes from the
+// transmitter path (plfm_chirp_controller_enhanced) which does NOT wrap
+// at chirps_per_elev — it overflows to N and only wraps at 6-bit rollover
+// (64).  This caused frame pulses at half the expected rate for N=32.
+reg tx_frame_start_prev;
 reg new_frame_pulse;
 
 always @(posedge clk or negedge reset_n) begin
     if (!reset_n) begin
-        chirp_counter_prev <= 6'd0;
+        tx_frame_start_prev <= 1'b0;
         new_frame_pulse <= 1'b0;
     end else begin
-        // Default: no pulse
         new_frame_pulse <= 1'b0;
         
-        // [FPGA-001 FIXED] Detect frame boundary when chirp_counter wraps to 0.
-        // The chirp_counter (driven by radar_mode_controller) counts 0..N-1
-        // and wraps back to 0 at the start of each new frame.  Previous code
-        // also checked (== host_chirps_per_elev) and (== 2*host_chirps_per_elev)
-        // which were unreachable dead conditions for any N, since the counter
-        // never reaches N.  Now works correctly for any chirps_per_elev value.
-        if (chirp_counter != chirp_counter_prev && chirp_counter == 6'd0) begin
+        // Edge detect: tx_frame_start is a toggle-CDC derived pulse that
+        // may be 1 clock wide.  Capture rising edge for clean 1-cycle pulse.
+        if (tx_frame_start && !tx_frame_start_prev) begin
             new_frame_pulse <= 1'b1;
         end
         
-        // Store previous value
-        chirp_counter_prev <= chirp_counter;
+        tx_frame_start_prev <= tx_frame_start;
     end
 end
 
@@ -480,14 +483,6 @@ always @(posedge clk or negedge reset_n) begin
                      frame_counter, chirps_in_current_frame);
             `endif
             chirps_in_current_frame <= 0;
-        end
-        
-        // Monitor chirp counter pattern
-        if (chirp_counter != chirp_counter_prev) begin
-            `ifdef SIMULATION
-            $display("[TOP] chirp_counter: %0d ? %0d", 
-                     chirp_counter_prev, chirp_counter);
-            `endif
         end
     end
 end

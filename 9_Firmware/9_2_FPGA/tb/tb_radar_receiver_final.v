@@ -96,15 +96,31 @@ end
 reg [5:0] chirp_counter;
 reg mc_new_chirp_prev;
 
+// Frame-start pulse: mirrors the real transmitter's new_chirp_frame signal.
+// In the real system this fires on IDLE→LONG_CHIRP transitions in the chirp
+// controller.  Here we derive it from the mode controller's chirp_count
+// wrapping back to 0 (which wraps correctly at cfg_chirps_per_elev).
+reg tx_frame_start;
+reg [5:0] rmc_chirp_prev;
+
 always @(posedge clk_100m or negedge reset_n) begin
     if (!reset_n) begin
         chirp_counter <= 6'd0;
         mc_new_chirp_prev <= 1'b0;
+        tx_frame_start <= 1'b0;
+        rmc_chirp_prev <= 6'd0;
     end else begin
         mc_new_chirp_prev <= dut.mc_new_chirp;
         if (dut.mc_new_chirp != mc_new_chirp_prev) begin
             chirp_counter <= chirp_counter + 1;
         end
+        
+        // Detect when the internal mode controller's chirp_count wraps to 0
+        tx_frame_start <= 1'b0;
+        if (dut.rmc_chirp_count == 6'd0 && rmc_chirp_prev != 6'd0) begin
+            tx_frame_start <= 1'b1;
+        end
+        rmc_chirp_prev <= dut.rmc_chirp_count;
     end
 end
 
@@ -128,6 +144,7 @@ radar_receiver_final dut (
     .adc_pwdn(),
 
     .chirp_counter(chirp_counter),
+    .tx_frame_start(tx_frame_start),
 
     .doppler_output(doppler_output),
     .doppler_valid(doppler_valid),

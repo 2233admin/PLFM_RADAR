@@ -505,6 +505,8 @@ radar_receiver_final rx_inst (
     
     // Chirp counter from transmitter (CDC-synchronized from 120 MHz domain)
     .chirp_counter(tx_current_chirp_sync),
+    // Frame-start pulse from transmitter (CDC-synchronized toggle→pulse)
+    .tx_frame_start(tx_new_chirp_frame_sync),
     
     // ADC Physical Interface
     .adc_d_p(adc_d_p),

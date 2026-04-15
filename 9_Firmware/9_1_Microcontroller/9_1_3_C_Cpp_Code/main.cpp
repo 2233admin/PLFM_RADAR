@@ -1181,8 +1181,8 @@ static int configure_ad9523(void)
         int32_t init_ret = ad9523_init(&init_param);
         DIAG("CLK", "ad9523_init() returned %ld", (long)init_ret);
         if (init_ret != 0) {
-            DIAG_ERR("CLK", "ad9523_init() FAILED (ret=%ld) -- calling Error_Handler()", (long)init_ret);
-            Error_Handler();
+            DIAG_ERR("CLK", "ad9523_init() FAILED (ret=%ld)", (long)init_ret);
+            return -1;
         }
     }
 
